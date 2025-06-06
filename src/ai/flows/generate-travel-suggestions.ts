@@ -43,17 +43,22 @@ const prompt = ai.definePrompt({
   name: 'generateTravelSuggestionsPrompt',
   input: {schema: GenerateTravelSuggestionsInputSchema},
   output: {schema: GenerateTravelSuggestionsOutputSchema},
-  prompt: `You are a travel expert.  Generate travel suggestions for the following destination based on the user's preferences.
+  prompt: `You are an expert travel advisor.
+Your task is to generate personalized travel information for the given destination based on the user's preferences.
+Please provide detailed and helpful content for each of the following categories.
 
-Destination: {{{destination}}}
-Interests: {{{interests}}}
-Budget: {{{budget}}}
-Time of Year: {{{timeOfYear}}}
+User Preferences:
+- Destination: {{{destination}}}
+- Interests: {{{interests}}}
+- Budget: {{{budget}}}
+- Time of Year: {{{timeOfYear}}}
 
-Suggestions:
-Potential Activities:
-Places to Stay:
-Restaurants:`,
+Based on these preferences, generate:
+- Suggestions: (Overall travel suggestions, what makes this destination special, key highlights)
+- Potential Activities: (Specific activities, tours, or experiences tailored to the interests)
+- Places to Stay: (Types of accommodation or specific examples suitable for the budget)
+- Restaurants: (Dining recommendations, types of cuisine to try)
+`,
 });
 
 const generateTravelSuggestionsFlow = ai.defineFlow(
