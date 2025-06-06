@@ -4,16 +4,7 @@ import { LandingSearchForm } from '@/components/common/destination-search-form';
 export function HeroSection() {
   return (
     <section className="relative flex flex-col items-center justify-center w-full min-h-[calc(100vh-4rem)] text-center px-4 py-16 md:py-24 lg:py-32 overflow-hidden">
-      <Image
-        src="https://placehold.co/1920x1080.png"
-        alt="Scenic travel landscape collage"
-        layout="fill"
-        objectFit="cover"
-        quality={85}
-        className="z-0 opacity-30" 
-        data-ai-hint="scenic landscape"
-        priority
-      />
+      
       
       <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/50 to-background z-10"></div>
 

@@ -2,12 +2,20 @@
 import { ClientSiteHeader } from '@/components/layout/client-site-header';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { generateTravelSuggestions, GenerateTravelSuggestionsInput } from '@/ai/flows/generate-travel-suggestions';
+import { generateTravelSuggestions, GenerateTravelSuggestionsInput, GenerateTravelSuggestionsOutput } from '@/ai/flows/generate-travel-suggestions';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import Image from 'next/image';
-import { AlertCircle, Lightbulb, MapPin, Utensils, BedDouble, Sparkles } from 'lucide-react';
+import Image from 'next/image'; // Using our custom Image component
+import { AlertCircle, Lightbulb, MapPin, Utensils, BedDouble, Sparkles, Map } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import dynamic from 'next/dynamic';
+
+const InteractiveMap = dynamic(() => import('@/components/search/interactive-map'), {
+  ssr: false,
+  loading: () => (
+    <Skeleton className="w-full h-[400px] lg:h-[500px] rounded-xl shadow-lg" />
+  ),
+});
 
 interface SearchResultsPageProps {
   params: {
@@ -50,12 +58,30 @@ async function TravelSuggestions({ destination: rawDestination, interests, budge
     timeOfYear: timeOfYear || 'any',
   };
 
-  try {
-    const travelOutput = await generateTravelSuggestions(input);
+  let travelOutput: GenerateTravelSuggestionsOutput | null = null;
+  let fetchError: Error | null = null;
 
-    if (!travelOutput || !travelOutput.suggestions) {
+  try {
+    travelOutput = await generateTravelSuggestions(input);
+  } catch (error) {
+    console.error(`Error generating travel suggestions for '${decodedDestination}'. Input:`, input, 'Error:', error);
+    fetchError = error instanceof Error ? error : new Error(String(error));
+  }
+
+  if (fetchError || !travelOutput || !travelOutput.suggestions) {
+    let errorMessage = "We encountered an issue while generating travel suggestions. Please try refreshing the page or searching again later.";
+    if (fetchError) {
+      if (fetchError.message.includes('API key not valid') || fetchError.message.includes('API_KEY_INVALID') || fetchError.message.includes('YOUR_GOOGLE_AI_API_KEY')) {
+        errorMessage = "The AI service API key is invalid or missing. Please check the server configuration (GOOGLE_API_KEY).";
+      } else if (fetchError.message.includes('Quota exceeded')) {
+        errorMessage = "The AI service quota has been exceeded. Please check your usage limits or try again later.";
+      } else {
+          errorMessage = `An unexpected error occurred: ${fetchError.message}. Please try again.`;
+      }
+    } else if (!travelOutput || !travelOutput.suggestions) {
       console.warn(`AI returned no suggestions or an empty response for '${decodedDestination}'. Input:`, input, "Output:", travelOutput);
-      return (
+      errorMessage = `While we couldn't generate specific suggestions for ${decodedDestination} with the current criteria, try broadening your search or checking back later!`;
+       return (
         <Card className="shadow-lg rounded-lg bg-amber-500/10 border-amber-600 text-amber-700 col-span-full">
           <CardHeader>
             <CardTitle className="text-2xl font-headline flex items-center gap-2">
@@ -64,23 +90,62 @@ async function TravelSuggestions({ destination: rawDestination, interests, budge
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p>While we couldn't generate specific suggestions for {decodedDestination} with the current criteria, try broadening your search or checking back later!</p>
+            <p>{errorMessage}</p>
           </CardContent>
         </Card>
       );
     }
-    
-
-    const sections = [
-      { title: "Overall Suggestions", content: travelOutput.suggestions, icon: <Lightbulb className="h-6 w-6 text-primary" />, id: "suggestions" },
-      { title: "Potential Activities", content: travelOutput.activities, icon: <Sparkles className="h-6 w-6 text-primary" />, id: "activities" },
-      { title: "Places to Stay", content: travelOutput.placesToStay, icon: <BedDouble className="h-6 w-6 text-primary" />, id: "placesToStay" },
-      { title: "Restaurant Recommendations", content: travelOutput.restaurants, icon: <Utensils className="h-6 w-6 text-primary" />, id: "restaurants" },
-    ];
-    
-    const imageHint = `${decodedDestination} ${interests ? interests.split(',')[0] : 'travel'}`;
 
     return (
+      <Card className="shadow-lg rounded-lg bg-destructive/10 border-destructive text-destructive-foreground col-span-full">
+        <CardHeader>
+          <CardTitle className="text-2xl font-headline flex items-center gap-2">
+            <AlertCircle className="h-6 w-6" />
+            Error Fetching Suggestions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>For destination: <code className="bg-muted px-1 py-0.5 rounded-sm">{decodedDestination}</code></p>
+          <p>{errorMessage}</p>
+          <p className="text-xs mt-2">If the problem persists, our team has been notified. You may check the server console for more details.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+    
+  const sections = [
+    { title: "Overall Suggestions", content: travelOutput.suggestions, icon: <Lightbulb className="h-6 w-6 text-primary" />, id: "suggestions" },
+    { title: "Potential Activities", content: travelOutput.activities, icon: <Sparkles className="h-6 w-6 text-primary" />, id: "activities" },
+    { title: "Places to Stay", content: travelOutput.placesToStay, icon: <BedDouble className="h-6 w-6 text-primary" />, id: "placesToStay" },
+    { title: "Restaurant Recommendations", content: travelOutput.restaurants, icon: <Utensils className="h-6 w-6 text-primary" />, id: "restaurants" },
+  ];
+  
+  const imageHint = `${decodedDestination} ${interests ? interests.split(',')[0] : 'travel'}`;
+
+  const mapData = {
+    mainDestination: {
+      name: decodedDestination,
+      lat: travelOutput.destinationCoordinates.lat,
+      lng: travelOutput.destinationCoordinates.lng,
+    },
+    nearbyAttractions: travelOutput.nearbyAttractions || [],
+  };
+
+  return (
+    <div className="space-y-12">
+      {mapData.mainDestination.lat && mapData.mainDestination.lng && (
+        <section>
+          <h2 className="text-3xl font-headline font-semibold mb-6 text-foreground flex items-center gap-3">
+            <Map className="h-8 w-8 text-primary" />
+            Interactive Map for {decodedDestination}
+          </h2>
+          <InteractiveMap 
+            mainDestination={mapData.mainDestination}
+            nearbyAttractions={mapData.nearbyAttractions}
+          />
+        </section>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           {sections.map(section => (
@@ -142,68 +207,43 @@ async function TravelSuggestions({ destination: rawDestination, interests, budge
           </Card>
         </div>
       </div>
-    );
-  } catch (error) {
-    console.error(`Error generating travel suggestions for '${decodedDestination}'. Input:`, input, 'Error:', error);
-    let errorMessage = "We encountered an issue while generating travel suggestions. Please try refreshing the page or searching again later.";
-    if (error instanceof Error) {
-      if (error.message.includes('API key not valid') || error.message.includes('API_KEY_INVALID')) {
-        errorMessage = "The AI service API key is invalid or missing. Please check the server configuration (GOOGLE_API_KEY).";
-      } else if (error.message.includes('Quota exceeded')) {
-        errorMessage = "The AI service quota has been exceeded. Please check your usage limits or try again later.";
-      } else {
-          errorMessage = `An unexpected error occurred: ${error.message}. Please try again.`;
-      }
-    }
-
-    return (
-      <Card className="shadow-lg rounded-lg bg-destructive/10 border-destructive text-destructive-foreground col-span-full">
-        <CardHeader>
-          <CardTitle className="text-2xl font-headline flex items-center gap-2">
-            <AlertCircle className="h-6 w-6" />
-            Error Fetching Suggestions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>For destination: <code className="bg-muted px-1 py-0.5 rounded-sm">{decodedDestination}</code></p>
-          <p>{errorMessage}</p>
-          <p className="text-xs mt-2">If the problem persists, our team has been notified. You may check the server console for more details.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+    </div>
+  );
 }
 
 function TravelSuggestionsSkeleton() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2 space-y-8">
-        {[...Array(3)].map((_, i) => (
-          <Card key={i} className="shadow-xl rounded-xl border-border/50">
+    <div className="space-y-12">
+      <Skeleton className="w-full h-[400px] lg:h-[500px] rounded-xl shadow-lg mb-8" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="shadow-xl rounded-xl border-border/50">
+              <CardHeader>
+                <Skeleton className="h-8 w-3/4 rounded-md" />
+              </CardHeader>
+              <CardContent className="space-y-3 pt-4">
+                <Skeleton className="h-4 w-full rounded-md" />
+                <Skeleton className="h-4 w-5/6 rounded-md" />
+                <Skeleton className="h-4 w-full rounded-md" />
+                <Skeleton className="h-4 w-4/6 rounded-md" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="lg:col-span-1 space-y-8">
+          <Card className="shadow-xl rounded-xl border-border/50 sticky top-24">
             <CardHeader>
-              <Skeleton className="h-8 w-3/4 rounded-md" />
+              <Skeleton className="h-7 w-1/2 rounded-md" />
             </CardHeader>
-            <CardContent className="space-y-3 pt-4">
-              <Skeleton className="h-4 w-full rounded-md" />
-              <Skeleton className="h-4 w-5/6 rounded-md" />
-              <Skeleton className="h-4 w-full rounded-md" />
-              <Skeleton className="h-4 w-4/6 rounded-md" />
+            <CardContent className="space-y-4">
+              <Skeleton className="h-5 w-3/4 rounded-md" />
+              <Skeleton className="h-5 w-1/2 rounded-md" />
+              <Skeleton className="h-5 w-2/3 rounded-md" />
+              <Skeleton className="w-full h-[200px] rounded-lg mt-4" />
             </CardContent>
           </Card>
-        ))}
-      </div>
-      <div className="lg:col-span-1 space-y-8">
-        <Card className="shadow-xl rounded-xl border-border/50 sticky top-24">
-          <CardHeader>
-            <Skeleton className="h-7 w-1/2 rounded-md" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-5 w-3/4 rounded-md" />
-            <Skeleton className="h-5 w-1/2 rounded-md" />
-            <Skeleton className="h-5 w-2/3 rounded-md" />
-            <Skeleton className="w-full h-[200px] rounded-lg mt-4" />
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );
