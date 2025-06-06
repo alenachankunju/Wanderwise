@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-// import { useRouter } from 'next/navigation'; // For future navigation
+import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   destination: z.string().min(2, {
@@ -22,7 +22,7 @@ const formSchema = z.object({
 });
 
 export function DestinationSearchForm() {
-  // const router = useRouter();
+  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -32,9 +32,7 @@ export function DestinationSearchForm() {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log("Search for:", values.destination);
-    // Example: router.push(`/search-results?destination=${encodeURIComponent(values.destination)}`);
-    // For now, this will just log to console.
-    // Actual search functionality and navigation to results page will be implemented later.
+    router.push(`/search-results/${encodeURIComponent(values.destination)}`);
   }
 
   return (
