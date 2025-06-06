@@ -5,88 +5,120 @@ import { generateTravelSuggestions, GenerateTravelSuggestionsInput } from '@/ai/
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
+import { AlertCircle, Lightbulb, MapPin, Utensils, BedDouble,Sparkles } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface SearchResultsPageProps {
   params: {
     destination: string;
   };
+  searchParams: {
+    interests?: string;
+    budget?: string;
+    timeOfYear?: string;
+  };
 }
 
-async function TravelSuggestions({ destination }: { destination: string }) {
+async function TravelSuggestions({ destination, interests, budget, timeOfYear }: { destination: string, interests?: string, budget?: string, timeOfYear?: string }) {
   const decodedDestination = decodeURIComponent(destination);
 
-  // For demonstration, we'll use some default values for interests, budget, and timeOfYear.
-  // In a real application, you might get these from user input or other sources.
   const input: GenerateTravelSuggestionsInput = {
     destination: decodedDestination,
-    interests: 'history, food, nature',
-    budget: 'medium',
-    timeOfYear: 'any',
+    interests: interests || 'general sightseeing, local culture', // Default if not provided
+    budget: budget || 'medium', // Default if not provided
+    timeOfYear: timeOfYear || 'any', // Default if not provided
   };
 
   try {
     const travelOutput = await generateTravelSuggestions(input);
 
+    const sections = [
+      { title: "Overall Suggestions", content: travelOutput.suggestions, icon: <Lightbulb className="h-6 w-6 text-primary" />, id: "suggestions" },
+      { title: "Potential Activities", content: travelOutput.activities, icon: <Sparkles className="h-6 w-6 text-primary" />, id: "activities" },
+      { title: "Places to Stay", content: travelOutput.placesToStay, icon: <BedDouble className="h-6 w-6 text-primary" />, id: "placesToStay" },
+      { title: "Restaurant Recommendations", content: travelOutput.restaurants, icon: <Utensils className="h-6 w-6 text-primary" />, id: "restaurants" },
+    ];
+    
+    const imageHint = `${decodedDestination} ${interests ? interests.split(',')[0] : 'travel'}`;
+
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="shadow-lg rounded-lg">
-          <CardHeader>
-            <CardTitle className="text-2xl font-headline">Suggestions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-foreground">{travelOutput.suggestions}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-lg rounded-lg">
-          <CardHeader>
-            <CardTitle className="text-2xl font-headline">Activities</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-foreground">{travelOutput.activities}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-lg rounded-lg">
-          <CardHeader>
-            <CardTitle className="text-2xl font-headline">Places to Stay</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-foreground">{travelOutput.placesToStay}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-lg rounded-lg md:col-span-2 lg:col-span-1">
-           <CardHeader>
-            <CardTitle className="text-2xl font-headline">Restaurants</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-foreground">{travelOutput.restaurants}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-lg rounded-lg md:col-span-2 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-2xl font-headline">Destination Image</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Image 
-              src={`https://placehold.co/600x400.png`} 
-              alt={`Image of ${decodedDestination}`} 
-              width={600} 
-              height={400} 
-              className="rounded-md object-cover"
-              data-ai-hint={`${decodedDestination} landmark`}
-            />
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          {sections.map(section => (
+            <Card key={section.id} className="shadow-xl rounded-xl border-border/50 overflow-hidden">
+              <CardHeader className="bg-card">
+                <CardTitle className="text-3xl font-headline flex items-center gap-3 text-foreground">
+                  {section.icon}
+                  {section.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="prose prose-lg max-w-none text-foreground/90 pt-4 font-body">
+                {/* Basic Markdown-like formatting for paragraphs */}
+                {section.content.split('\n\n').map((paragraph, pIdx) => (
+                  <p key={pIdx} className="mb-4 last:mb-0">{paragraph}</p>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="lg:col-span-1 space-y-8">
+          <Card className="shadow-xl rounded-xl border-border/50 sticky top-24">
+            <CardHeader>
+              <CardTitle className="text-2xl font-headline flex items-center gap-3 text-foreground">
+                <MapPin className="h-6 w-6 text-primary" />
+                Your Trip Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 font-body">
+              <div>
+                <h4 className="font-semibold text-foreground">Destination:</h4>
+                <p className="text-muted-foreground">{decodedDestination}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-foreground">Interests:</h4>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {(interests || 'Not specified').split(',').map(interest => (
+                    <Badge key={interest.trim()} variant="secondary" className="text-sm">{interest.trim()}</Badge>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-foreground">Budget:</h4>
+                <Badge variant="secondary" className="capitalize text-sm">{budget || 'Not specified'}</Badge>
+              </div>
+              <div>
+                <h4 className="font-semibold text-foreground">Time of Year:</h4>
+                <p className="text-muted-foreground capitalize">{timeOfYear || 'Not specified'}</p>
+              </div>
+               <div className="mt-6">
+                <Image 
+                  src={`https://placehold.co/600x400.png`} 
+                  alt={`Image of ${decodedDestination}`} 
+                  width={600} 
+                  height={400} 
+                  className="rounded-lg object-cover w-full shadow-md"
+                  data-ai-hint={imageHint}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   } catch (error) {
     console.error("Error generating travel suggestions:", error);
     return (
-      <Card className="shadow-lg rounded-lg bg-destructive text-destructive-foreground">
+      <Card className="shadow-lg rounded-lg bg-destructive/10 border-destructive text-destructive-foreground col-span-full">
         <CardHeader>
-          <CardTitle className="text-2xl font-headline">Error</CardTitle>
+          <CardTitle className="text-2xl font-headline flex items-center gap-2">
+            <AlertCircle className="h-6 w-6" />
+            Error Fetching Suggestions
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <p>Sorry, we couldn't fetch travel suggestions at this time. Please try again later.</p>
+          <p>We encountered an issue while generating travel suggestions for {decodedDestination}. Please try refreshing the page or searching again later.</p>
+          <p className="text-xs mt-2">If the problem persists, our team has been notified.</p>
         </CardContent>
       </Card>
     );
@@ -95,59 +127,64 @@ async function TravelSuggestions({ destination }: { destination: string }) {
 
 function TravelSuggestionsSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[...Array(3)].map((_, i) => (
-        <Card key={i} className="shadow-lg rounded-lg">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="lg:col-span-2 space-y-8">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i} className="shadow-xl rounded-xl border-border/50">
+            <CardHeader>
+              <Skeleton className="h-8 w-3/4 rounded-md" />
+            </CardHeader>
+            <CardContent className="space-y-3 pt-4">
+              <Skeleton className="h-4 w-full rounded-md" />
+              <Skeleton className="h-4 w-5/6 rounded-md" />
+              <Skeleton className="h-4 w-full rounded-md" />
+              <Skeleton className="h-4 w-4/6 rounded-md" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="lg:col-span-1 space-y-8">
+        <Card className="shadow-xl rounded-xl border-border/50 sticky top-24">
           <CardHeader>
-            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-7 w-1/2 rounded-md" />
           </CardHeader>
-          <CardContent className="space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
-            <Skeleton className="h-4 w-full" />
+          <CardContent className="space-y-4">
+            <Skeleton className="h-5 w-3/4 rounded-md" />
+            <Skeleton className="h-5 w-1/2 rounded-md" />
+            <Skeleton className="h-5 w-2/3 rounded-md" />
+            <Skeleton className="w-full h-[200px] rounded-lg mt-4" />
           </CardContent>
         </Card>
-      ))}
-       <Card className="shadow-lg rounded-lg md:col-span-2 lg:col-span-1">
-          <CardHeader>
-             <Skeleton className="h-8 w-3/4" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
-          </CardContent>
-        </Card>
-        <Card className="shadow-lg rounded-lg md:col-span-2 lg:col-span-2">
-          <CardHeader>
-            <Skeleton className="h-8 w-1/2" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="w-full h-[400px] rounded-md" />
-          </CardContent>
-        </Card>
+      </div>
     </div>
   );
 }
 
 
-export default function SearchResultsPage({ params }: SearchResultsPageProps) {
-  const destination = params.destination;
+export default function SearchResultsPage({ params, searchParams }: SearchResultsPageProps) {
+  const { destination } = params;
+  const { interests, budget, timeOfYear } = searchParams;
   const decodedDestination = decodeURIComponent(destination);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-background to-secondary/30">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-secondary/10">
       <SiteHeader />
       <main className="flex-grow container py-12 lg:py-16">
         <div className="mb-10 text-center">
-          <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground">
-            Explore <span className="text-primary-foreground bg-primary px-2 rounded-md">{decodedDestination}</span>
+          <h1 className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-foreground">
+            Explore <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{decodedDestination}</span>
           </h1>
-          <p className="font-body text-lg sm:text-xl text-muted-foreground mt-4 max-w-2xl mx-auto">
-            Discover AI-curated suggestions for your adventure in {decodedDestination}.
+          <p className="font-body text-lg sm:text-xl text-muted-foreground mt-4 max-w-3xl mx-auto">
+            AI-curated travel suggestions for your adventure in {decodedDestination}, tailored to your preferences.
           </p>
         </div>
         <Suspense fallback={<TravelSuggestionsSkeleton />}>
-          <TravelSuggestions destination={destination} />
+          <TravelSuggestions 
+            destination={destination} 
+            interests={interests}
+            budget={budget}
+            timeOfYear={timeOfYear}
+          />
         </Suspense>
       </main>
       <SiteFooter />

@@ -8,10 +8,18 @@ export default {
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+    container: { // Added container centering and padding
+      center: true,
+      padding: '1rem', // Default padding, can be overridden
+      screens: {
+        '2xl': '1400px',
+      },
+    },
     extend: {
       fontFamily: {
-        headline: ['Belleza', 'sans-serif'],
-        body: ['Alegreya', 'serif'],
+        sans: ['var(--font-inter)', 'sans-serif'], // Set Inter as default sans-serif
+        headline: ['var(--font-inter)', 'sans-serif'], // Use Inter for headlines
+        body: ['var(--font-inter)', 'serif'], // Use Inter for body
         code: ['monospace'],
       },
       colors: {

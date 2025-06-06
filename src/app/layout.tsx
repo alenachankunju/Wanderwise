@@ -1,6 +1,14 @@
 import type {Metadata} from 'next';
+import { Inter } from 'next/font/google'; // Import Inter
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+
+// Configure Inter font
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter', // CSS variable for Inter
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'WanderWise',
@@ -13,14 +21,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Belleza&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet" />
+        {/* Google Fonts preconnect (Inter is now self-hosted via next/font) */}
       </head>
-      <body className="font-body antialiased min-h-screen flex flex-col">
+      <body className="font-sans antialiased min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-secondary/10">
         <div className="flex-grow flex flex-col">
           {children}
         </div>
