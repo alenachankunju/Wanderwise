@@ -1,8 +1,13 @@
 
+"use client";
+
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import React, { useState } from 'react';
+import { BookingDialog } from '@/components/booking/booking-dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from '@/components/ui/alert-dialog';
+import { CheckCircle2 } from 'lucide-react';
 
 const dubaiDestinations = [
   {
@@ -10,39 +15,48 @@ const dubaiDestinations = [
     description: "Experience breathtaking views from the world’s tallest building.",
     image: "https://placehold.co/400x300.png",
     imageHint: "Burj Khalifa skyscraper",
-    link: "/search-results/Dubai?interests=architecture,views&budget=high&timeOfYear=any"
   },
   {
     name: "Palm Jumeirah",
     description: "Explore the iconic man-made island shaped like a palm tree.",
     image: "https://placehold.co/400x300.png",
     imageHint: "Palm Jumeirah aerial",
-    link: "/search-results/Dubai?interests=beaches,luxury&budget=high&timeOfYear=any"
   },
   {
     name: "Dubai Desert Safari",
     description: "Embark on an thrilling adventure through the Arabian dunes.",
     image: "https://placehold.co/400x300.png",
     imageHint: "desert safari adventure",
-    link: "/search-results/Dubai?interests=adventure,desert&budget=medium&timeOfYear=any"
   },
   {
     name: "Dubai Mall & Aquarium",
     description: "Shop at one of the world's largest malls and visit the stunning aquarium.",
     image: "https://placehold.co/400x300.png",
     imageHint: "Dubai Mall interior",
-    link: "/search-results/Dubai?interests=shopping,entertainment&budget=medium&timeOfYear=any"
   },
   {
     name: "Al Fahidi Historical District",
     description: "Step back in time and explore Dubai's rich culture and tradition.",
     image: "https://placehold.co/400x300.png",
     imageHint: "Al Fahidi architecture",
-    link: "/search-results/Dubai?interests=culture,history&budget=low&timeOfYear=any"
   },
 ];
 
 export function FeaturedDestinationsDubaiSection() {
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isThankYouModalOpen, setIsThankYouModalOpen] = useState(false);
+  const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
+
+  const handleOpenBookingModal = (destinationName: string) => {
+    setSelectedDestination(destinationName);
+    setIsBookingModalOpen(true);
+  };
+
+  const handleBookingSuccess = () => {
+    setIsBookingModalOpen(false);
+    setIsThankYouModalOpen(true);
+  };
+
   return (
     <section className="py-16 lg:py-24 bg-background">
       <div className="container">
@@ -61,7 +75,7 @@ export function FeaturedDestinationsDubaiSection() {
                 <Image
                   src={destination.image}
                   alt={`Image of ${destination.name}`}
-                  layout="fill"
+                  fill // Changed from layout="fill" for Next 13+ App Router
                   objectFit="cover"
                   data-ai-hint={destination.imageHint}
                 />
@@ -73,16 +87,44 @@ export function FeaturedDestinationsDubaiSection() {
                 <p className="text-muted-foreground font-body text-sm">{destination.description}</p>
               </CardContent>
               <div className="p-6 pt-0">
-                <Link href={destination.link} passHref legacyBehavior>
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" aria-label={`Explore ${destination.name}`}>
-                    Explore More
-                  </Button>
-                </Link>
+                <Button 
+                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" 
+                  aria-label={`Book ${destination.name}`}
+                  onClick={() => handleOpenBookingModal(destination.name)}
+                >
+                  Book Now
+                </Button>
               </div>
             </Card>
           ))}
         </div>
       </div>
+
+      {selectedDestination && (
+        <BookingDialog
+          isOpen={isBookingModalOpen}
+          onOpenChange={setIsBookingModalOpen}
+          destinationName={selectedDestination}
+          onBookingSuccess={handleBookingSuccess}
+        />
+      )}
+
+      <AlertDialog open={isThankYouModalOpen} onOpenChange={setIsThankYouModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-6 w-6 text-green-500" />
+              Booking Confirmed!
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              🎉 Thank you for booking with WanderWise! Our team will reach out to you shortly.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setIsThankYouModalOpen(false)}>Close</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
