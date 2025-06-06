@@ -1,5 +1,5 @@
 
-import { SiteHeader } from '@/components/layout/site-header';
+import { ClientSiteHeader } from '@/components/layout/client-site-header';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { generateTravelSuggestions, GenerateTravelSuggestionsInput } from '@/ai/flows/generate-travel-suggestions';
@@ -54,8 +54,7 @@ async function TravelSuggestions({ destination: rawDestination, interests, budge
     const travelOutput = await generateTravelSuggestions(input);
 
     if (!travelOutput || !travelOutput.suggestions) {
-      // Handle cases where the AI might return an empty or unexpected valid response
-      console.error(`AI returned no suggestions for '${decodedDestination}'. Input:`, input, "Output:", travelOutput);
+      console.warn(`AI returned no suggestions or an empty response for '${decodedDestination}'. Input:`, input, "Output:", travelOutput);
       return (
         <Card className="shadow-lg rounded-lg bg-amber-500/10 border-amber-600 text-amber-700 col-span-full">
           <CardHeader>
@@ -147,10 +146,14 @@ async function TravelSuggestions({ destination: rawDestination, interests, budge
   } catch (error) {
     console.error(`Error generating travel suggestions for '${decodedDestination}'. Input:`, input, 'Error:', error);
     let errorMessage = "We encountered an issue while generating travel suggestions. Please try refreshing the page or searching again later.";
-    if (error instanceof Error && error.message.includes('API key not valid')) {
-        errorMessage = "The AI service API key is invalid or missing. Please check the server configuration.";
-    } else if (error instanceof Error) {
-        errorMessage = `An unexpected error occurred: ${error.message}. Please try again.`;
+    if (error instanceof Error) {
+      if (error.message.includes('API key not valid') || error.message.includes('API_KEY_INVALID')) {
+        errorMessage = "The AI service API key is invalid or missing. Please check the server configuration (GOOGLE_API_KEY).";
+      } else if (error.message.includes('Quota exceeded')) {
+        errorMessage = "The AI service quota has been exceeded. Please check your usage limits or try again later.";
+      } else {
+          errorMessage = `An unexpected error occurred: ${error.message}. Please try again.`;
+      }
     }
 
     return (
@@ -215,14 +218,13 @@ export default function SearchResultsPage({ params, searchParams }: SearchResult
   try {
     displayDestination = decodeURIComponent(destination);
   } catch (e) {
-    // If decoding fails for the header, use the raw param for display and let TravelSuggestions handle the detailed error.
     displayDestination = destination; 
   }
 
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-secondary/10">
-      <SiteHeader />
+      <ClientSiteHeader />
       <main className="flex-grow container py-12 lg:py-16">
         <div className="mb-10 text-center">
           <h1 className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-foreground">
@@ -245,4 +247,3 @@ export default function SearchResultsPage({ params, searchParams }: SearchResult
     </div>
   );
 }
-

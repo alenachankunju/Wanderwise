@@ -1,5 +1,5 @@
 
-import { SiteHeader } from '@/components/layout/site-header';
+import { ClientSiteHeader } from '@/components/layout/client-site-header';
 import { HeroSection } from '@/components/landing/hero-section';
 import { HowAiWorksSection } from '@/components/landing/how-ai-works-section';
 import { TestimonialsSection } from '@/components/landing/testimonials-section';
@@ -10,7 +10,7 @@ import { FeaturedDestinationsDubaiSection } from '@/components/landing/featured-
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
-      <SiteHeader />
+      <ClientSiteHeader />
       <main className="flex-grow">
         <HeroSection />
         <section className="py-16 lg:py-24 bg-background">
