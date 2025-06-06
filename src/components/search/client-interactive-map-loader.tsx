@@ -32,9 +32,9 @@ const InteractiveMap = dynamic(() => import('@/components/search/interactive-map
 });
 
 export function ClientInteractiveMapLoader({ mainDestination, nearbyAttractions }: ClientInteractiveMapLoaderProps) {
-  // Directly return the dynamically imported component.
-  // The 'dynamic' function with 'ssr: false' and 'loading' prop
-  // handles the server-side behavior (rendering the loading fallback)
-  // and client-side loading state, ensuring consistency.
-  return <InteractiveMap mainDestination={mainDestination} nearbyAttractions={nearbyAttractions} />;
+  // Generate a key based on the core map data that, if changed, should warrant a full remount.
+  // This helps ensure Leaflet gets a fresh DOM node.
+  const mapKey = `${mainDestination.name}-${mainDestination.lat}-${mainDestination.lng}`;
+
+  return <InteractiveMap key={mapKey} mainDestination={mainDestination} nearbyAttractions={nearbyAttractions} />;
 }

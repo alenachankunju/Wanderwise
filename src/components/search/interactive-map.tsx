@@ -4,18 +4,27 @@
 import type { LatLngExpression } from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet'; 
-import Image from 'next/image'; 
+import L from 'leaflet';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Star } from 'lucide-react';
 
-// Fix for default Leaflet icon path issues with Webpack/Next.js
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+// Robust fix for default Leaflet icon path issues with Webpack/Next.js
+// Ensures this modification runs only once per client session.
+if (typeof window !== 'undefined') {
+  if (!(window as any).__LEAFLET_ICON_FIXED__) {
+    // Check if _getIconUrl exists on the prototype before attempting to delete it
+    if (L.Icon.Default.prototype.hasOwnProperty('_getIconUrl')) {
+        delete (L.Icon.Default.prototype as any)._getIconUrl;
+    }
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    });
+    (window as any).__LEAFLET_ICON_FIXED__ = true;
+  }
+}
 
 
 const defaultIcon = L.icon({
@@ -29,7 +38,7 @@ const defaultIcon = L.icon({
   shadowSize: [41, 41],
 });
 
-const highlightedIcon = L.icon({ 
+const highlightedIcon = L.icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
@@ -60,8 +69,8 @@ interface InteractiveMapProps {
 export default function InteractiveMap({ mainDestination, nearbyAttractions }: InteractiveMapProps) {
   const position: LatLngExpression = [mainDestination.lat, mainDestination.lng];
 
-  // Removed showMap state and useEffect. 
   // ClientInteractiveMapLoader and next/dynamic handle client-side rendering and loading state.
+  // This component now cleanly renders the MapContainer.
 
   return (
     <Card className="shadow-xl rounded-xl border-border/50 overflow-hidden w-full h-[500px] lg:h-[600px]">
@@ -83,12 +92,13 @@ export default function InteractiveMap({ mainDestination, nearbyAttractions }: I
               <div className="w-64 space-y-2">
                 {point.photoUrl && (
                    <div className="relative h-32 w-full rounded-md overflow-hidden">
-                    <Image 
-                        src={point.photoUrl} 
-                        alt={`Image of ${point.name}`} 
+                    <Image
+                        src={point.photoUrl}
+                        alt={`Image of ${point.name}`}
                         fill
-                        objectFit="cover"
-                        data-ai-hint={`${point.name.substring(0,50)} attraction`} 
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Example sizes, adjust as needed
+                        style={{objectFit: "cover"}} // Replaces objectFit prop for next/image v13+
+                        data-ai-hint={`${point.name.substring(0,50)} attraction`}
                     />
                    </div>
                 )}
