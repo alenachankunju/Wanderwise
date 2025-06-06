@@ -29,6 +29,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { useToast } from "@/hooks/use-toast";
 
 const bookingFormSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -60,6 +62,7 @@ interface BookingDialogProps {
 
 export function BookingDialog({ isOpen, onOpenChange, destinationName, onBookingSuccess }: BookingDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingFormSchema),
@@ -74,17 +77,41 @@ export function BookingDialog({ isOpen, onOpenChange, destinationName, onBooking
 
   async function onSubmit(values: BookingFormValues) {
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    console.log("Booking details:", values);
-    setIsSubmitting(false);
-    onBookingSuccess();
-    form.reset(); // Reset form after successful submission
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .insert([{
+          full_name: values.fullName,
+          whatsapp: values.whatsappNumber,
+          mobile: values.mobileNumber,
+          email: values.email,
+          travel_date: format(values.travelDate, "yyyy-MM-dd"), // Format date for Supabase
+          destination_name: destinationName, // Optionally store the destination
+          created_at: new Date().toISOString()
+        }]);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log("Booking successful, Supabase data:", data);
+      onBookingSuccess();
+      form.reset(); 
+    } catch (error) {
+      console.error('Booking failed:', error);
+      toast({
+        variant: "destructive",
+        title: "Booking Failed",
+        description: "Something went wrong. Please try again later.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) form.reset(); // Reset form if dialog is closed
+      if (!open && !isSubmitting) form.reset(); 
       onOpenChange(open);
     }}>
       <DialogContent className="sm:max-w-[480px]">
