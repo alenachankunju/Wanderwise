@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -31,7 +32,7 @@ const NearbyPointSchema = z.object({
   lat: z.number().describe('Plausible latitude of the nearby point. This should be a valid floating point number.'),
   lng: z.number().describe('Plausible longitude of the nearby point. This should be a valid floating point number.'),
   photoUrl: z.string().optional().describe("URL to a representative photo of the point. If unknown, provide a relevant placeholder image URL from https://placehold.co, e.g., https://placehold.co/300x200.png. Include data-ai-hint for placeholder with keywords."),
-  rating: z.number().optional().min(1).max(5).describe('An overall rating from 1 to 5, if a common rating is known.'),
+  rating: z.number().min(1).max(5).optional().describe('An overall rating from 1 to 5, if a common rating is known.'),
 });
 
 const GenerateTravelSuggestionsOutputSchema = z.object({
