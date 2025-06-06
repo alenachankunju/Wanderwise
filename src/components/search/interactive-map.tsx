@@ -8,6 +8,8 @@ import L from 'leaflet'; // Import L for custom icons if needed
 import Image from 'next/image'; // Using our custom Image component
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Star } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Fix for default Leaflet icon path issues with Webpack/Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -59,6 +61,22 @@ interface InteractiveMapProps {
 
 export default function InteractiveMap({ mainDestination, nearbyAttractions }: InteractiveMapProps) {
   const position: LatLngExpression = [mainDestination.lat, mainDestination.lng];
+  const [showMap, setShowMap] = useState(false);
+
+  useEffect(() => {
+    // Ensures MapContainer is rendered only after the component has mounted once on the client.
+    // This helps with React StrictMode's double invocation of effects for libraries like Leaflet.
+    setShowMap(true);
+  }, []);
+
+  if (!showMap) {
+    // Render a placeholder matching the Card's structure and map's dimensions
+    return (
+      <Card className="shadow-xl rounded-xl border-border/50 overflow-hidden w-full h-[500px] lg:h-[600px] flex items-center justify-center p-1">
+        <Skeleton className="w-full h-full rounded-md" />
+      </Card>
+    );
+  }
 
   return (
     <Card className="shadow-xl rounded-xl border-border/50 overflow-hidden w-full h-[500px] lg:h-[600px]">
