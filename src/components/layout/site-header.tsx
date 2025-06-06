@@ -1,3 +1,5 @@
+'use client';
+
 import { AppLogo } from '@/components/common/app-logo';
 import { Button } from '@/components/ui/button';
 import { SignInButton, SignUpButton, UserButton, SignedIn, SignedOut } from '@clerk/nextjs';
