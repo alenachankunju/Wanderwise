@@ -25,20 +25,16 @@ interface ClientInteractiveMapLoaderProps {
 }
 
 const InteractiveMap = dynamic(() => import('@/components/search/interactive-map'), {
-  ssr: false,
+  ssr: false, // This ensures the component only renders on the client
   loading: () => (
     <Skeleton className="w-full h-[400px] lg:h-[500px] rounded-xl shadow-lg" />
   ),
 });
 
 export function ClientInteractiveMapLoader({ mainDestination, nearbyAttractions }: ClientInteractiveMapLoaderProps) {
-  // Although InteractiveMap itself checks for window,
-  // it's good practice to be defensive in the loader too,
-  // or ensure the loading skeleton handles SSR correctly.
-  if (typeof window === 'undefined') {
-    // This skeleton will be shown during SSR and initial client render before dynamic import resolves
-    return <Skeleton className="w-full h-[400px] lg:h-[500px] rounded-xl shadow-lg" />;
-  }
-
+  // Directly return the dynamically imported component.
+  // The 'dynamic' function with 'ssr: false' and 'loading' prop
+  // handles the server-side behavior (rendering the loading fallback)
+  // and client-side loading state, ensuring consistency.
   return <InteractiveMap mainDestination={mainDestination} nearbyAttractions={nearbyAttractions} />;
 }
