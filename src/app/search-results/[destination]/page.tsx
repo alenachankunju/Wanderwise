@@ -8,14 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image'; // Using our custom Image component
 import { AlertCircle, Lightbulb, MapPin, Utensils, BedDouble, Sparkles, Map } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import dynamic from 'next/dynamic';
+// Import the new Client Component for loading the map
+import { ClientInteractiveMapLoader } from '@/components/search/client-interactive-map-loader';
 
-const InteractiveMap = dynamic(() => import('@/components/search/interactive-map'), {
-  ssr: false,
-  loading: () => (
-    <Skeleton className="w-full h-[400px] lg:h-[500px] rounded-xl shadow-lg" />
-  ),
-});
 
 interface SearchResultsPageProps {
   params: {
@@ -139,7 +134,8 @@ async function TravelSuggestions({ destination: rawDestination, interests, budge
             <Map className="h-8 w-8 text-primary" />
             Interactive Map for {decodedDestination}
           </h2>
-          <InteractiveMap 
+          {/* Use the new ClientInteractiveMapLoader component */}
+          <ClientInteractiveMapLoader 
             mainDestination={mapData.mainDestination}
             nearbyAttractions={mapData.nearbyAttractions}
           />
