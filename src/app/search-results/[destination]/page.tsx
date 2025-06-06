@@ -1,3 +1,4 @@
+
 import { SiteHeader } from '@/components/layout/site-header';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,7 +6,7 @@ import { generateTravelSuggestions, GenerateTravelSuggestionsInput } from '@/ai/
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
-import { AlertCircle, Lightbulb, MapPin, Utensils, BedDouble,Sparkles } from 'lucide-react';
+import { AlertCircle, Lightbulb, MapPin, Utensils, BedDouble, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface SearchResultsPageProps {
@@ -20,7 +21,27 @@ interface SearchResultsPageProps {
 }
 
 async function TravelSuggestions({ destination, interests, budget, timeOfYear }: { destination: string, interests?: string, budget?: string, timeOfYear?: string }) {
-  const decodedDestination = decodeURIComponent(destination);
+  let decodedDestination: string;
+
+  try {
+    decodedDestination = decodeURIComponent(destination);
+  } catch (decodingError) {
+    console.error("Error decoding destination from URL:", decodingError, "Original destination param:", destination);
+    return (
+      <Card className="shadow-lg rounded-lg bg-destructive/10 border-destructive text-destructive-foreground col-span-full">
+        <CardHeader>
+          <CardTitle className="text-2xl font-headline flex items-center gap-2">
+            <AlertCircle className="h-6 w-6" />
+            Invalid Destination URL
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>The destination provided in the URL could not be processed. Please check the link and try again.</p>
+          {decodingError instanceof Error && <p className="text-xs mt-2">Error: {decodingError.message}</p>}
+        </CardContent>
+      </Card>
+    );
+  }
 
   const input: GenerateTravelSuggestionsInput = {
     destination: decodedDestination,
@@ -40,7 +61,6 @@ async function TravelSuggestions({ destination, interests, budget, timeOfYear }:
     ];
     
     const imageHint = `${decodedDestination} ${interests ? interests.split(',')[0] : 'travel'}`;
-
 
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -107,7 +127,7 @@ async function TravelSuggestions({ destination, interests, budget, timeOfYear }:
       </div>
     );
   } catch (error) {
-    console.error("Error generating travel suggestions:", error);
+    console.error(`Error generating travel suggestions for '${decodedDestination}':`, error);
     return (
       <Card className="shadow-lg rounded-lg bg-destructive/10 border-destructive text-destructive-foreground col-span-full">
         <CardHeader>
@@ -118,7 +138,7 @@ async function TravelSuggestions({ destination, interests, budget, timeOfYear }:
         </CardHeader>
         <CardContent>
           <p>We encountered an issue while generating travel suggestions for {decodedDestination}. Please try refreshing the page or searching again later.</p>
-          <p className="text-xs mt-2">If the problem persists, our team has been notified.</p>
+          <p className="text-xs mt-2">If the problem persists, our team has been notified. You may check the server console for more details.</p>
         </CardContent>
       </Card>
     );
@@ -164,7 +184,8 @@ function TravelSuggestionsSkeleton() {
 export default function SearchResultsPage({ params, searchParams }: SearchResultsPageProps) {
   const { destination } = params;
   const { interests, budget, timeOfYear } = searchParams;
-  const decodedDestination = decodeURIComponent(destination);
+  // We decode destination inside the TravelSuggestions component to handle errors there
+  // const decodedDestination = decodeURIComponent(destination); 
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-secondary/10">
@@ -172,15 +193,16 @@ export default function SearchResultsPage({ params, searchParams }: SearchResult
       <main className="flex-grow container py-12 lg:py-16">
         <div className="mb-10 text-center">
           <h1 className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-foreground">
-            Explore <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{decodedDestination}</span>
+            {/* Displaying raw destination here, decoded version will be shown by TravelSuggestions or its error message */}
+            Explore <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{decodeURIComponent(destination)}</span>
           </h1>
           <p className="font-body text-lg sm:text-xl text-muted-foreground mt-4 max-w-3xl mx-auto">
-            AI-curated travel suggestions for your adventure in {decodedDestination}, tailored to your preferences.
+            AI-curated travel suggestions for your adventure in {decodeURIComponent(destination)}, tailored to your preferences.
           </p>
         </div>
         <Suspense fallback={<TravelSuggestionsSkeleton />}>
           <TravelSuggestions 
-            destination={destination} 
+            destination={destination} // Pass the raw destination from params
             interests={interests}
             budget={budget}
             timeOfYear={timeOfYear}
