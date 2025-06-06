@@ -4,12 +4,10 @@
 import type { LatLngExpression } from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet'; // Import L for custom icons if needed
-import Image from 'next/image'; // Using our custom Image component
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import L from 'leaflet'; 
+import Image from 'next/image'; 
+import { Card } from '@/components/ui/card';
 import { Star } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 
 // Fix for default Leaflet icon path issues with Webpack/Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -31,7 +29,7 @@ const defaultIcon = L.icon({
   shadowSize: [41, 41],
 });
 
-const highlightedIcon = L.icon({ // Example for main destination
+const highlightedIcon = L.icon({ 
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
@@ -61,22 +59,9 @@ interface InteractiveMapProps {
 
 export default function InteractiveMap({ mainDestination, nearbyAttractions }: InteractiveMapProps) {
   const position: LatLngExpression = [mainDestination.lat, mainDestination.lng];
-  const [showMap, setShowMap] = useState(false);
 
-  useEffect(() => {
-    // Ensures MapContainer is rendered only after the component has mounted once on the client.
-    // This helps with React StrictMode's double invocation of effects for libraries like Leaflet.
-    setShowMap(true);
-  }, []);
-
-  if (!showMap) {
-    // Render a placeholder matching the Card's structure and map's dimensions
-    return (
-      <Card className="shadow-xl rounded-xl border-border/50 overflow-hidden w-full h-[500px] lg:h-[600px] flex items-center justify-center p-1">
-        <Skeleton className="w-full h-full rounded-md" />
-      </Card>
-    );
-  }
+  // Removed showMap state and useEffect. 
+  // ClientInteractiveMapLoader and next/dynamic handle client-side rendering and loading state.
 
   return (
     <Card className="shadow-xl rounded-xl border-border/50 overflow-hidden w-full h-[500px] lg:h-[600px]">
@@ -103,7 +88,7 @@ export default function InteractiveMap({ mainDestination, nearbyAttractions }: I
                         alt={`Image of ${point.name}`} 
                         fill
                         objectFit="cover"
-                        data-ai-hint={`${point.name.substring(0,50)} attraction`} // Use name for hint
+                        data-ai-hint={`${point.name.substring(0,50)} attraction`} 
                     />
                    </div>
                 )}
