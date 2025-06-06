@@ -20,8 +20,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+  if (!publishableKey) {
+    // This block is more for server-side rendering or build time.
+    // The error you're seeing is likely client-side initialization failing.
+    // However, it's good practice to check.
+    console.error("Clerk publishableKey is not set in environment variables.");
+    // Depending on how critical Clerk is, you might throw an error here
+    // or render a fallback UI. For now, we'll let Clerk handle the error display.
+  }
+
   return (
-    <ClerkProvider>
+    <ClerkProvider publishableKey={publishableKey!}>
       <html lang="en" suppressHydrationWarning className={`${inter.variable}`}>
         <head>
         </head>
