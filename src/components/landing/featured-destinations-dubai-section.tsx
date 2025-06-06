@@ -13,7 +13,7 @@ const dubaiDestinations = [
   {
     name: "Burj Khalifa",
     description: "Experience breathtaking views from the world’s tallest building.",
-    image: "https://placehold.co/400x300.png",
+    image: "/assets/burj-khalifa.jpg", // Corrected path
     imageHint: "Burj Khalifa skyscraper",
   },
   {
@@ -75,7 +75,7 @@ export function FeaturedDestinationsDubaiSection() {
                 <Image
                   src={destination.image}
                   alt={`Image of ${destination.name}`}
-                  fill // Changed from layout="fill" for Next 13+ App Router
+                  fill 
                   objectFit="cover"
                   data-ai-hint={destination.imageHint}
                 />
