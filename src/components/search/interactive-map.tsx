@@ -2,12 +2,13 @@
 'use client';
 
 import type { LatLngExpression } from 'leaflet';
+import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Star } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 // Robust fix for default Leaflet icon path issues with Webpack/Next.js
 // Ensures this modification runs only once per client session.
@@ -67,14 +68,33 @@ interface InteractiveMapProps {
 }
 
 export default function InteractiveMap({ mainDestination, nearbyAttractions }: InteractiveMapProps) {
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const position: LatLngExpression = [mainDestination.lat, mainDestination.lng];
 
-  // ClientInteractiveMapLoader and next/dynamic handle client-side rendering and loading state.
-  // This component now cleanly renders the MapContainer.
+  useEffect(() => {
+    // Cleanup function to remove the map instance when the component unmounts or mapInstance changes.
+    // This is crucial for React StrictMode and preventing re-initialization errors.
+    return () => {
+      if (mapInstance) {
+        // Check if the map container still exists and if it's the one associated with this map instance.
+        // Leaflet's map.remove() should handle this, but this adds an extra layer of safety.
+        const container = mapInstance.getContainer();
+        if (container && container._leaflet_id === mapInstance._leaflet_id) {
+            mapInstance.remove();
+        }
+      }
+    };
+  }, [mapInstance]); // Rerun effect if mapInstance changes (though it shouldn't change after creation)
 
   return (
     <Card className="shadow-xl rounded-xl border-border/50 overflow-hidden w-full h-[500px] lg:h-[600px]">
-      <MapContainer center={position} zoom={11} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+      <MapContainer
+        center={position}
+        zoom={11}
+        scrollWheelZoom={false}
+        style={{ height: '100%', width: '100%' }}
+        whenCreated={setMapInstance} // Get reference to the map instance
+      >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -96,8 +116,8 @@ export default function InteractiveMap({ mainDestination, nearbyAttractions }: I
                         src={point.photoUrl}
                         alt={`Image of ${point.name}`}
                         fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Example sizes, adjust as needed
-                        style={{objectFit: "cover"}} // Replaces objectFit prop for next/image v13+
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        style={{objectFit: "cover"}}
                         data-ai-hint={`${point.name.substring(0,50)} attraction`}
                     />
                    </div>
