@@ -20,13 +20,13 @@ interface SearchResultsPageProps {
   };
 }
 
-async function TravelSuggestions({ destination, interests, budget, timeOfYear }: { destination: string, interests?: string, budget?: string, timeOfYear?: string }) {
+async function TravelSuggestions({ destination: rawDestination, interests, budget, timeOfYear }: { destination: string, interests?: string, budget?: string, timeOfYear?: string }) {
   let decodedDestination: string;
 
   try {
-    decodedDestination = decodeURIComponent(destination);
+    decodedDestination = decodeURIComponent(rawDestination);
   } catch (decodingError) {
-    console.error("Error decoding destination from URL:", decodingError, "Original destination param:", destination);
+    console.error("Error decoding destination from URL:", decodingError, "Original destination param:", rawDestination);
     return (
       <Card className="shadow-lg rounded-lg bg-destructive/10 border-destructive text-destructive-foreground col-span-full">
         <CardHeader>
@@ -36,8 +36,8 @@ async function TravelSuggestions({ destination, interests, budget, timeOfYear }:
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p>The destination provided in the URL could not be processed. Please check the link and try again.</p>
-          {decodingError instanceof Error && <p className="text-xs mt-2">Error: {decodingError.message}</p>}
+          <p>The destination <code className="bg-muted px-1 py-0.5 rounded-sm">{rawDestination}</code> provided in the URL could not be processed. Please check the link and try again.</p>
+          {decodingError instanceof Error && <p className="text-xs mt-2">Error details: {decodingError.message}</p>}
         </CardContent>
       </Card>
     );
@@ -45,13 +45,32 @@ async function TravelSuggestions({ destination, interests, budget, timeOfYear }:
 
   const input: GenerateTravelSuggestionsInput = {
     destination: decodedDestination,
-    interests: interests || 'general sightseeing, local culture', // Default if not provided
-    budget: budget || 'medium', // Default if not provided
-    timeOfYear: timeOfYear || 'any', // Default if not provided
+    interests: interests || 'general sightseeing, local culture',
+    budget: budget || 'medium',
+    timeOfYear: timeOfYear || 'any',
   };
 
   try {
     const travelOutput = await generateTravelSuggestions(input);
+
+    if (!travelOutput || !travelOutput.suggestions) {
+      // Handle cases where the AI might return an empty or unexpected valid response
+      console.error(`AI returned no suggestions for '${decodedDestination}'. Input:`, input, "Output:", travelOutput);
+      return (
+        <Card className="shadow-lg rounded-lg bg-amber-500/10 border-amber-600 text-amber-700 col-span-full">
+          <CardHeader>
+            <CardTitle className="text-2xl font-headline flex items-center gap-2">
+              <Lightbulb className="h-6 w-6" />
+              No Specific Suggestions Found
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>While we couldn't generate specific suggestions for {decodedDestination} with the current criteria, try broadening your search or checking back later!</p>
+          </CardContent>
+        </Card>
+      );
+    }
+    
 
     const sections = [
       { title: "Overall Suggestions", content: travelOutput.suggestions, icon: <Lightbulb className="h-6 w-6 text-primary" />, id: "suggestions" },
@@ -74,7 +93,6 @@ async function TravelSuggestions({ destination, interests, budget, timeOfYear }:
                 </CardTitle>
               </CardHeader>
               <CardContent className="prose prose-lg max-w-none text-foreground/90 pt-4 font-body">
-                {/* Basic Markdown-like formatting for paragraphs */}
                 {section.content.split('\n\n').map((paragraph, pIdx) => (
                   <p key={pIdx} className="mb-4 last:mb-0">{paragraph}</p>
                 ))}
@@ -127,7 +145,14 @@ async function TravelSuggestions({ destination, interests, budget, timeOfYear }:
       </div>
     );
   } catch (error) {
-    console.error(`Error generating travel suggestions for '${decodedDestination}':`, error);
+    console.error(`Error generating travel suggestions for '${decodedDestination}'. Input:`, input, 'Error:', error);
+    let errorMessage = "We encountered an issue while generating travel suggestions. Please try refreshing the page or searching again later.";
+    if (error instanceof Error && error.message.includes('API key not valid')) {
+        errorMessage = "The AI service API key is invalid or missing. Please check the server configuration.";
+    } else if (error instanceof Error) {
+        errorMessage = `An unexpected error occurred: ${error.message}. Please try again.`;
+    }
+
     return (
       <Card className="shadow-lg rounded-lg bg-destructive/10 border-destructive text-destructive-foreground col-span-full">
         <CardHeader>
@@ -137,7 +162,8 @@ async function TravelSuggestions({ destination, interests, budget, timeOfYear }:
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p>We encountered an issue while generating travel suggestions for {decodedDestination}. Please try refreshing the page or searching again later.</p>
+          <p>For destination: <code className="bg-muted px-1 py-0.5 rounded-sm">{decodedDestination}</code></p>
+          <p>{errorMessage}</p>
           <p className="text-xs mt-2">If the problem persists, our team has been notified. You may check the server console for more details.</p>
         </CardContent>
       </Card>
@@ -184,8 +210,15 @@ function TravelSuggestionsSkeleton() {
 export default function SearchResultsPage({ params, searchParams }: SearchResultsPageProps) {
   const { destination } = params;
   const { interests, budget, timeOfYear } = searchParams;
-  // We decode destination inside the TravelSuggestions component to handle errors there
-  // const decodedDestination = decodeURIComponent(destination); 
+  
+  let displayDestination: string;
+  try {
+    displayDestination = decodeURIComponent(destination);
+  } catch (e) {
+    // If decoding fails for the header, use the raw param for display and let TravelSuggestions handle the detailed error.
+    displayDestination = destination; 
+  }
+
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-secondary/10">
@@ -193,16 +226,15 @@ export default function SearchResultsPage({ params, searchParams }: SearchResult
       <main className="flex-grow container py-12 lg:py-16">
         <div className="mb-10 text-center">
           <h1 className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-foreground">
-            {/* Displaying raw destination here, decoded version will be shown by TravelSuggestions or its error message */}
-            Explore <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{decodeURIComponent(destination)}</span>
+            Explore <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{displayDestination}</span>
           </h1>
           <p className="font-body text-lg sm:text-xl text-muted-foreground mt-4 max-w-3xl mx-auto">
-            AI-curated travel suggestions for your adventure in {decodeURIComponent(destination)}, tailored to your preferences.
+            AI-curated travel suggestions for your adventure in {displayDestination}, tailored to your preferences.
           </p>
         </div>
         <Suspense fallback={<TravelSuggestionsSkeleton />}>
           <TravelSuggestions 
-            destination={destination} // Pass the raw destination from params
+            destination={destination} 
             interests={interests}
             budget={budget}
             timeOfYear={timeOfYear}
@@ -213,3 +245,4 @@ export default function SearchResultsPage({ params, searchParams }: SearchResult
     </div>
   );
 }
+
