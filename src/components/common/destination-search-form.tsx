@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,8 +15,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Briefcase, DollarSign, CalendarDays } from "lucide-react";
+import { Search, Briefcase, DollarSign, CalendarDays, Loader2 } from "lucide-react";
 import { useRouter } from 'next/navigation';
+import { useState } from "react";
 
 const formSchema = z.object({
   mood: z.string().min(2, {
@@ -32,17 +34,20 @@ const formSchema = z.object({
 
 export function LandingSearchForm() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       mood: "",
       destination: "",
-      budget: undefined, // No default for select
+      budget: undefined, 
       timeOfYear: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
     const queryParams = new URLSearchParams({
       interests: values.mood,
       budget: values.budget,
@@ -50,7 +55,10 @@ export function LandingSearchForm() {
     if (values.timeOfYear) {
       queryParams.set('timeOfYear', values.timeOfYear);
     }
+    // Simulate a delay for demonstration if needed, then navigate
+    // await new Promise(resolve => setTimeout(resolve, 1500)); 
     router.push(`/search-results/${encodeURIComponent(values.destination)}?${queryParams.toString()}`);
+    // setIsLoading(false); // Navigation will unmount this component or change page, so this might not be strictly necessary.
   }
 
   return (
@@ -70,6 +78,7 @@ export function LandingSearchForm() {
                   placeholder="E.g., beach, mountains, culture"
                   {...field}
                   className="h-12 text-base p-3 rounded-lg shadow-sm focus-visible:ring-primary focus-visible:ring-2"
+                  disabled={isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -87,6 +96,7 @@ export function LandingSearchForm() {
                   placeholder="E.g., Paris, Bali"
                   {...field}
                   className="h-12 text-base p-3 rounded-lg shadow-sm focus-visible:ring-primary focus-visible:ring-2"
+                  disabled={isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -99,7 +109,7 @@ export function LandingSearchForm() {
           render={({ field }) => (
             <FormItem className="lg:col-span-1">
               <FormLabel className="text-foreground/80 font-semibold flex items-center gap-2"><DollarSign className="w-4 h-4 text-primary"/>Budget</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base p-3 rounded-lg shadow-sm focus-visible:ring-primary focus-visible:ring-2">
                     <SelectValue placeholder="Select budget" />
@@ -126,6 +136,7 @@ export function LandingSearchForm() {
                   placeholder="E.g., Summer, December"
                   {...field}
                   className="h-12 text-base p-3 rounded-lg shadow-sm focus-visible:ring-primary focus-visible:ring-2"
+                  disabled={isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -137,9 +148,19 @@ export function LandingSearchForm() {
           size="lg"
           className="md:col-span-2 lg:col-span-4 h-14 p-4 mt-4 rounded-lg shadow-md bg-primary hover:bg-primary/90 text-primary-foreground focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 text-lg font-semibold w-full"
           aria-label="Find suggestions for your destination"
+          disabled={isLoading}
         >
-          <Search className="h-5 w-5 mr-2" />
-          Find Suggestions
+          {isLoading ? (
+            <>
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              Finding the perfect destination for you...
+            </>
+          ) : (
+            <>
+              <Search className="h-5 w-5 mr-2" />
+              Find Suggestions
+            </>
+          )}
         </Button>
       </form>
     </Form>
