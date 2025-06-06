@@ -5,11 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { generateTravelSuggestions, GenerateTravelSuggestionsInput, GenerateTravelSuggestionsOutput } from '@/ai/flows/generate-travel-suggestions';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import Image from 'next/image'; // Using our custom Image component
-import { AlertCircle, Lightbulb, MapPin, Utensils, BedDouble, Sparkles, Map } from 'lucide-react';
+import Image from 'next/image';
+import { AlertCircle, Lightbulb, MapPin, Utensils, BedDouble, Sparkles } from 'lucide-react'; // Removed Map from here as it's used in MapDisplayToggle
 import { Badge } from '@/components/ui/badge';
-// Import the new Client Component for loading the map
-import { ClientInteractiveMapLoader } from '@/components/search/client-interactive-map-loader';
+import { MapDisplayToggle } from '@/components/search/map-display-toggle';
 
 
 interface SearchResultsPageProps {
@@ -117,29 +116,16 @@ async function TravelSuggestions({ destination: rawDestination, interests, budge
   
   const imageHint = `${decodedDestination} ${interests ? interests.split(',')[0] : 'travel'}`;
 
-  const mapData = {
-    mainDestination: {
-      name: decodedDestination,
-      lat: travelOutput.destinationCoordinates.lat,
-      lng: travelOutput.destinationCoordinates.lng,
-    },
-    nearbyAttractions: travelOutput.nearbyAttractions || [],
-  };
+  const mapDataAvailable = travelOutput.destinationCoordinates?.lat && travelOutput.destinationCoordinates?.lng;
 
   return (
     <div className="space-y-12">
-      {mapData.mainDestination.lat && mapData.mainDestination.lng && (
-        <section>
-          <h2 className="text-3xl font-headline font-semibold mb-6 text-foreground flex items-center gap-3">
-            <Map className="h-8 w-8 text-primary" />
-            Interactive Map for {decodedDestination}
-          </h2>
-          {/* Use the new ClientInteractiveMapLoader component */}
-          <ClientInteractiveMapLoader 
-            mainDestination={mapData.mainDestination}
-            nearbyAttractions={mapData.nearbyAttractions}
-          />
-        </section>
+      {mapDataAvailable && (
+        <MapDisplayToggle
+          destinationName={decodedDestination}
+          mainDestination={travelOutput.destinationCoordinates!}
+          nearbyAttractions={travelOutput.nearbyAttractions || []}
+        />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -210,7 +196,10 @@ async function TravelSuggestions({ destination: rawDestination, interests, budge
 function TravelSuggestionsSkeleton() {
   return (
     <div className="space-y-12">
+      {/* Skeleton for Map or Button Area */}
+      <Skeleton className="h-10 w-48 rounded-lg mb-6" /> 
       <Skeleton className="w-full h-[400px] lg:h-[500px] rounded-xl shadow-lg mb-8" />
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           {[...Array(3)].map((_, i) => (
