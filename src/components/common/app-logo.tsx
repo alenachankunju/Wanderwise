@@ -1,5 +1,7 @@
+'use client';
+
 import Link from 'next/link';
-import { MountainSnow } from 'lucide-react'; // Changed icon
+import { MountainSnow } from 'lucide-react';
 
 export function AppLogo() {
   return (
