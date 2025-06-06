@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { LatLngExpression } from 'leaflet';
@@ -57,10 +58,6 @@ interface InteractiveMapProps {
 }
 
 export default function InteractiveMap({ mainDestination, nearbyAttractions }: InteractiveMapProps) {
-  if (typeof window === 'undefined') {
-    return null; // Or a placeholder, Leaflet needs window object
-  }
-  
   const position: LatLngExpression = [mainDestination.lat, mainDestination.lng];
 
   return (
