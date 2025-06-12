@@ -13,31 +13,31 @@ const dubaiDestinations = [
   {
     name: "Burj Khalifa",
     description: "Experience breathtaking views from the world’s tallest building.",
-    image: "https://placehold.co/400x300.png",
+    image: "/assets/burj-khalifa.jpg", // Corrected path
     imageHint: "Burj Khalifa skyscraper",
   },
   {
     name: "Palm Jumeirah",
     description: "Explore the iconic man-made island shaped like a palm tree.",
-    image: "https://placehold.co/400x300.png",
+    image: "/assets/palm-jumeirah.jpg",
     imageHint: "Palm Jumeirah aerial",
   },
   {
     name: "Dubai Desert Safari",
     description: "Embark on an thrilling adventure through the Arabian dunes.",
-    image: "https://placehold.co/400x300.png",
+    image: "/assets/dubai-desert.jpg",
     imageHint: "desert safari adventure",
   },
   {
     name: "Dubai Mall & Aquarium",
     description: "Shop at one of the world's largest malls and visit the stunning aquarium.",
-    image: "https://placehold.co/400x300.png",
+    image: "/assets/dubai-mall.jpg",
     imageHint: "Dubai Mall interior",
   },
   {
     name: "Al Fahidi Historical District",
     description: "Step back in time and explore Dubai's rich culture and tradition.",
-    image: "https://placehold.co/400x300.png",
+    image: "/assets/Al-fahidi-historical.jpg",
     imageHint: "Al Fahidi architecture",
   },
 ];
@@ -75,7 +75,7 @@ export function FeaturedDestinationsDubaiSection() {
                 <Image
                   src={destination.image}
                   alt={`Image of ${destination.name}`}
-                  fill // Changed from layout="fill" for Next 13+ App Router
+                  fill 
                   objectFit="cover"
                   data-ai-hint={destination.imageHint}
                 />
