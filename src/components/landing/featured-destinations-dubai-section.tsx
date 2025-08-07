@@ -76,7 +76,7 @@ export function FeaturedDestinationsDubaiSection() {
                   src={destination.image}
                   alt={`Image of ${destination.name}`}
                   fill 
-                  objectFit="cover"
+                  style={{objectFit:"cover"}}
                   data-ai-hint={destination.imageHint}
                 />
               </div>
