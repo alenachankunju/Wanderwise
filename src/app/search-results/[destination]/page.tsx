@@ -1,5 +1,5 @@
 
-import { ClientSiteHeader } from '@/components/layout/client-site-header';
+import { SiteHeader } from '@/components/layout/site-header';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { generateTravelSuggestions, GenerateTravelSuggestionsInput, GenerateTravelSuggestionsOutput } from '@/ai/flows/generate-travel-suggestions';
@@ -123,7 +123,10 @@ async function TravelSuggestions({ destination: rawDestination, interests, budge
       {mapDataAvailable && (
         <MapDisplayToggle
           destinationName={decodedDestination}
-          mainDestination={travelOutput.destinationCoordinates!}
+          mainDestination={{
+            name: decodedDestination,
+            ...travelOutput.destinationCoordinates!,
+          }}
           nearbyAttractions={travelOutput.nearbyAttractions || []}
         />
       )}
@@ -249,7 +252,7 @@ export default function SearchResultsPage({ params, searchParams }: SearchResult
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-secondary/10">
-      <ClientSiteHeader />
+      <SiteHeader />
       <main className="flex-grow container py-12 lg:py-16">
         <div className="mb-10 text-center">
           <h1 className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-foreground">
